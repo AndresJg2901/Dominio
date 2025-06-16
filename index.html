@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Solucionador de Desigualdades Lineales y Cuadráticas</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; background: #f0f0f0; }
+  h1 { color: #333; }
+  label { display: block; margin: 10px 0 5px; }
+  input, select, button { padding: 8px; font-size: 16px; width: 100%; max-width: 300px; }
+  #resultado { margin-top: 20px; padding: 15px; background: #fff; border-radius: 5px; box-shadow: 0 0 5px #ccc; }
+</style>
+</head>
+<body>
+
+<h1>Solucionador de Desigualdades</h1>
+
+<form id="formDesigualdad" onsubmit="resolverDesigualdad(event)">
+  <label for="tipo">Tipo de desigualdad:</label>
+  <select id="tipo" required>
+    <option value="lineal">Lineal (ax + b &lt; 0, &gt; 0, etc.)</option>
+    <option value="cuadratica">Cuadrática (ax² + bx + c &lt; 0, &gt; 0, etc.)</option>
+  </select>
+
+  <label for="a">Coeficiente a:</label>
+  <input type="number" id="a" step="any" required />
+
+  <label for="b">Coeficiente b:</label>
+  <input type="number" id="b" step="any" required />
+
+  <label for="c" id="labelC" style="display:none;">Coeficiente c:</label>
+  <input type="number" id="c" step="any" style="display:none;" />
+
+  <label for="operador">Operador de la desigualdad:</label>
+  <select id="operador" required>
+    <option value="<">{"<"}</option>
+    <option value="<=">{"≤"}</option>
+    <option value=">">{">"}</option>
+    <option value=">=">{"≥"}</option>
+  </select>
+
+  <button type="submit">Resolver</button>
+</form>
+
+<div id="resultado"></div>
+
+<script>
+  const tipoSelect = document.getElementById('tipo');
+  const cInput = document.getElementById('c');
+  const labelC = document.getElementById('labelC');
+
+  tipoSelect.addEventListener('change', () => {
+    if (tipoSelect.value === 'cuadratica') {
+      cInput.style.display = 'block';
+      labelC.style.display = 'block';
+    } else {
+      cInput.style.display = 'none';
+      labelC.style.display = 'none';
+    }
+  });
+
+  function resolverDesigualdad(event) {
+    event.preventDefault();
+    const tipo = tipoSelect.value;
+    const a = parseFloat(document.getElementById('a').value);
+    const b = parseFloat(document.getElementById('b').value);
+    const c = tipo === 'cuadratica' ? parseFloat(document.getElementById('c').value) : 0;
+    const operador = document.getElementById('operador').value;
+
+    let resultado = '';
+
+    if (tipo === 'lineal') {
+      // ax + b ? 0
+      // x ? -b/a (si a != 0)
+      if (a === 0) {
+        if (eval(`b ${operador} 0`)) {
+          resultado = 'La desigualdad es verdadera para todo x.';
+        } else {
+          resultado = 'La desigualdad no tiene solución.';
+        }
+      } else {
+        let frontera = -b / a;
+        // Ajustamos el operador si a es negativo porque al dividir cambiamos sentido
+        let op = operador;
+        if (a < 0) {
+          if (operador === '<') op = '>';
+          else if (operador === '<=') op = '>=';
+          else if (operador === '>') op = '<';
+          else if (operador === '>=') op = '<=';
+        }
+
+        resultado = `Solución: x ${op} ${frontera.toFixed(4)}`;
+      }
+    } else if (tipo === 'cuadratica') {
+      // ax² + bx + c ? 0
+      if (a === 0) {
+        resultado = 'Para ecuación cuadrática, "a" no puede ser 0.';
+      } else {
+        const discriminante = b*b - 4*a*c;
+        let raiz1, raiz2;
+
+        if (discriminante < 0) {
+          // No hay raíces reales
+          if (a > 0) {
+            if (operador === '<' || operador === '<=') {
+              resultado = 'No hay solución real, ya que el trinomio es siempre positivo.';
+            } else {
+              resultado = 'La desigualdad es verdadera para todo x, porque el trinomio es siempre positivo.';
+            }
+          } else {
+            if (operador === '<' || operador === '<=') {
+              resultado = 'La desigualdad es verdadera para todo x, porque el trinomio es siempre negativo.';
+            } else {
+              resultado = 'No hay solución real, ya que el trinomio es siempre negativo.';
+            }
+          }
+        } else if (discriminante === 0) {
+          raiz1 = -b / (2*a);
+          if (a > 0) {
+            if (operador === '<') {
+              resultado = `Solución: x ≠ ${raiz1.toFixed(4)} (la parábola toca el eje x y es positiva).`;
+            } else if (operador === '<=') {
+              resultado = `Solución: x ∈ ℝ (todos los reales), ya que el valor mínimo es 0 en x = ${raiz1.toFixed(4)}.`;
+            } else if (operador === '>') {
+              resultado = `Solución: x = ${raiz1.toFixed(4)}.`;
+            } else if (operador === '>=') {
+              resultado = `Solución: x ∈ ℝ (todos los reales).`;
+            }
+          } else {
+            if (operador === '<') {
+              resultado = `Solución: x = ${raiz1.toFixed(4)}.`;
+            } else if (operador === '<=') {
+              resultado = `Solución: x ∈ ℝ (todos los reales).`;
+            } else if (operador === '>') {
+              resultado = `Solución: x ≠ ${raiz1.toFixed(4)}.`;
+            } else if (operador === '>=') {
+              resultado = `Solución: x ∈ ℝ (todos los reales).`;
+            }
+          }
+        } else {
+          // Dos raíces reales
+          raiz1 = (-b - Math.sqrt(discriminante)) / (2*a);
+          raiz2 = (-b + Math.sqrt(discriminante)) / (2*a);
+
+          // Ordenamos raíces
+          let r1 = Math.min(raiz1, raiz2);
+          let r2 = Math.max(raiz1, raiz2);
+
+          if (a > 0) {
+            if (operador === '<') {
+              resultado = `Solución: ${r1.toFixed(4)} < x < ${r2.toFixed(4)}`;
+            } else if (operador === '<=') {
+              resultado = `Solución: ${r1.toFixed(4)} ≤ x ≤ ${r2.toFixed(4)}`;
+            } else if (operador === '>') {
+              resultado = `Solución: x < ${r1.toFixed(4)} o x > ${r2.toFixed(4)}`;
+            } else if (operador === '>=') {
+              resultado = `Solución: x ≤ ${r1.toFixed(4)} o x ≥ ${r2.toFixed(4)}`;
+            }
+          } else {
+            if (operador === '<') {
+              resultado = `Solución: x < ${r1.toFixed(4)} o x > ${r2.toFixed(4)}`;
+            } else if (operador === '<=') {
+              resultado = `Solución: x ≤ ${r1.toFixed(4)} o x ≥ ${r2.toFixed(4)}`;
+            } else if (operador === '>') {
+              resultado = `Solución: ${r1.toFixed(4)} < x < ${r2.toFixed(4)}`;
+            } else if (operador === '>=') {
+              resultado = `Solución: ${r1.toFixed(4)} ≤ x ≤ ${r2.toFixed(4)}`;
+            }
+          }
+        }
+      }
+    }
+
+    document.getElementById('resultado').innerHTML = resultado;
+  }
+</script>
+
+</body>
+</html>
